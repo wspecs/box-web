@@ -21,7 +21,7 @@ install_once nginx
 install_once mysql-server
 
 echo Updating PHP config
-PHP_VERSION=7.2
+PHP_VERSION=7.4
 add_config PHP_VERSION=$PHP_VERSION /etc/wspecs/global.conf
 install_once php$PHP_VERSION-cli
 install_once php$PHP_VERSION-fpm
