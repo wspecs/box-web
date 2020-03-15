@@ -1,13 +1,14 @@
 #!/bin/bash
 
-echo 'running wspecs/box-web'
+source /etc/wspecs/global.conf
+source /etc/wspecs/functions.sh
 
 # Some Ubuntu images start off with Apache. Remove it since we
 # will use nginx. Use autoremove to remove any Apache depenencies.
 if [ -f /usr/sbin/apache2 ]; then
-	echo Removing apache...
-	hide_output apt-get -y purge apache2 apache2-*
-	hide_output apt-get -y --purge autoremove
+  echo Removing apache...
+  hide_output apt-get -y purge apache2 apache2-*
+  hide_output apt-get -y --purge autoremove
 fi
 
 # Install nginx and a PHP FastCGI daemon.
@@ -18,21 +19,18 @@ echo "Installing Nginx (web server)..."
 
 install_once nginx
 install_once mysql-server
-install_once php-cli
-install_once php-fpm
-install_once php-mysql
-install_once php-curl
-install_once php-gd
-install_once php-mbstring
-install_once php-xml
 
 echo Updating PHP config
-FPM_CONFIG=$(find /etc/php/*/fpm -name php.ini)
-sed -i 's|;cgi.fix_pathinfo=1|cgi.fix_pathinfo=0|g' $FPM_CONFIG
-PHP_SERVICE_NAME=$(systemctl list-units --type service | grep fpm | grep php | awk '{print $1}')
-PHP_VERSION=$(echo $PHP_SERVICE_NAME | sed 's/-fpm.service//g')
-PHP_VERSION_NUMBER=$(echo $PHP_VERSION | sed 's/php//g')
-sudo systemctl restart $PHP_SERVICE_NAME
+PHP_VERSION=7.2
+install_once php$PHP_VERSION-cli
+install_once php$PHP_VERSION-fpm
+install_once php$PHP_VERSION-mysql
+install_once php$PHP_VERSION-curl
+install_once php$PHP_VERSION-gd
+install_once php$PHP_VERSION-mbstring
+install_once php$PHP_VERSION-xml
+
+sudo systemctl restart php$PHP_VERSION-fpm
 
 if [ -f "~/.my.cnf" ]; then
   echo MySQL login is already configured
@@ -62,22 +60,25 @@ rm -f /etc/nginx/sites-enabled/default
 # SSL settings from @konklone. Replace STORAGE_ROOT so it can find
 # the DH params.
 rm -f /etc/nginx/nginx-ssl.conf # we used to put it here
+
 sed "s#STORAGE_ROOT#$STORAGE_ROOT#" \
-	nginx-ssl.conf > /etc/nginx/conf.d/ssl.conf
+  nginx-ssl.conf > /etc/nginx/conf.d/ssl.conf
+sed "s#STORAGE_ROOT#$STORAGE_ROOT#" \
+  nginx-default.conf > /etc/nginx/conf.d/default.conf
 
 edit_config /etc/nginx/nginx.conf -s \
-	server_names_hash_bucket_size="128;" \
-	ssl_protocols="TLSv1.2 TLSv1.3;"
+  server_names_hash_bucket_size="128;" \
+  ssl_protocols="TLSv1.2 TLSv1.3;"
 
 # Set PHPs default charset to UTF-8, since we use it. See #367.
-edit_config /etc/php/$PHP_VERSION_NUMBER/fpm/php.ini -c ';' \
+edit_config /etc/php/$PHP_VERSION/fpm/php.ini -c ';' \
         default_charset="UTF-8"
 
 # Configure the path environment for php-fpm
-edit_config /etc/php/$PHP_VERSION_NUMBER/fpm/pool.d/www.conf -c ';' \
-	env[PATH]=/usr/local/bin:/usr/bin:/bin \
+edit_config /etc/php/$PHP_VERSION/fpm/pool.d/www.conf -c ';' \
+  env[PATH]=/usr/local/bin:/usr/bin:/bin \
 
-edit_config /etc/php/$PHP_VERSION_NUMBER/fpm/pool.d/www.conf -c ';' \
+edit_config /etc/php/$PHP_VERSION/fpm/pool.d/www.conf -c ';' \
                 pm=ondemand \
                 pm.max_children=16 \
                 pm.start_servers=4 \
@@ -89,12 +90,12 @@ edit_config /etc/php/$PHP_VERSION_NUMBER/fpm/pool.d/www.conf -c ';' \
 mkdir -p /var/lib/wspecsbox
 chmod a+rx /var/lib/wspecsbox
 cat ios-profile.xml \
-	| sed "s/PRIMARY_HOSTNAME/$PRIMARY_HOSTNAME/" \
-	| sed "s/UUID1/$(cat /proc/sys/kernel/random/uuid)/" \
-	| sed "s/UUID2/$(cat /proc/sys/kernel/random/uuid)/" \
-	| sed "s/UUID3/$(cat /proc/sys/kernel/random/uuid)/" \
-	| sed "s/UUID4/$(cat /proc/sys/kernel/random/uuid)/" \
-	 > /var/lib/wspecsbox/mobileconfig.xml
+  | sed "s/PRIMARY_HOSTNAME/$PRIMARY_HOSTNAME/" \
+  | sed "s/UUID1/$(cat /proc/sys/kernel/random/uuid)/" \
+  | sed "s/UUID2/$(cat /proc/sys/kernel/random/uuid)/" \
+  | sed "s/UUID3/$(cat /proc/sys/kernel/random/uuid)/" \
+  | sed "s/UUID4/$(cat /proc/sys/kernel/random/uuid)/" \
+   > /var/lib/wspecsbox/mobileconfig.xml
 chmod a+r /var/lib/wspecsbox/mobileconfig.xml
 
 # Create the Mozilla Auto-configuration file which is exposed via the
@@ -103,21 +104,21 @@ chmod a+r /var/lib/wspecsbox/mobileconfig.xml
 # https://wiki.mozilla.org/Thunderbird:Autoconfiguration:ConfigFileFormat
 # and https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration/FileFormat/HowTo.
 cat mozilla-autoconfig.xml \
-	| sed "s/PRIMARY_HOSTNAME/$PRIMARY_HOSTNAME/" \
-	 > /var/lib/wspecsbox/mozilla-autoconfig.xml
+  | sed "s/PRIMARY_HOSTNAME/$PRIMARY_HOSTNAME/" \
+   > /var/lib/wspecsbox/mozilla-autoconfig.xml
 chmod a+r /var/lib/wspecsbox/mozilla-autoconfig.xml
 
 # make a default homepage
 if [ -d $STORAGE_ROOT/www/static ]; then mv $STORAGE_ROOT/www/static $STORAGE_ROOT/www/default; fi # migration #NODOC
 mkdir -p $STORAGE_ROOT/www/default
 if [ ! -f $STORAGE_ROOT/www/default/index.html ]; then
-	cp index.html $STORAGE_ROOT/www/default/index.html
+  cp index.html $STORAGE_ROOT/www/default/index.html
 fi
 chown -R $STORAGE_USER $STORAGE_ROOT/www
 
 # Start services.
 restart_service nginx
-restart_service php$PHP_VERSION_NUMBER-fpm
+restart_service php$PHP_VERSION-fpm
 
 # Open ports.
 ufw_allow http
