@@ -116,6 +116,15 @@ if [ ! -f $STORAGE_ROOT/www/default/index.html ]; then
 fi
 chown -R $STORAGE_USER $STORAGE_ROOT/www
 
+# Register with Let's Encrypt, including agreeing to the Terms of Service.
+# We'd let certbot ask the user interactively, but when this script is
+# run in the recommended curl-pipe-to-bash method there is no TTY and
+# certbot will fail if it tries to ask.
+if [ ! -d $STORAGE_ROOT/ssl/lets_encrypt/accounts/acme-v02.api.letsencrypt.org/ ]; then
+  certbot register --register-unsafely-without-email --agree-tos --config-dir $STORAGE_ROOT/ssl/lets_encrypt
+fi
+
+
 # Start services.
 restart_service nginx
 restart_service php$PHP_VERSION-fpm
