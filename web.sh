@@ -3,6 +3,10 @@
 source /etc/wspecs/global.conf
 source /etc/wspecs/functions.sh
 
+# Open ports.
+ufw_allow http
+ufw_allow https
+
 # Some Ubuntu images start off with Apache. Remove it since we
 # will use nginx. Use autoremove to remove any Apache depenencies.
 if [ -f /usr/sbin/apache2 ]; then
