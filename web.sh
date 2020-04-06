@@ -35,6 +35,7 @@ install_once php$PHP_VERSION-gd
 install_once php$PHP_VERSION-mbstring
 install_once php$PHP_VERSION-xml
 
+cp php.ini /etc/php/$PHP_VERSION/fpm/php.ini
 sudo systemctl restart php$PHP_VERSION-fpm
 
 if [ -f "~/.my.cnf" ]; then
