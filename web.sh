@@ -112,6 +112,21 @@ cat mozilla-autoconfig.xml \
    > /var/lib/wspecsbox/mozilla-autoconfig.xml
 chmod a+r /var/lib/wspecsbox/mozilla-autoconfig.xml
 
+# Create a generic mta-sts.txt file which is exposed via the
+# nginx configuration at /.well-known/mta-sts.txt
+# more documentation is available on: 
+# https://www.uriports.com/blog/mta-sts-explained/
+# default mode is "enforce". Change to "testing" which means
+# "Messages will be delivered as though there was no failure
+# but a report will be sent if TLS-RPT is configured" if you
+# are not sure you want this yet. Or "none".
+PUNY_PRIMARY_HOSTNAME=$(echo "$PRIMARY_HOSTNAME" | idn2)
+cat mta-sts.txt \
+        | sed "s/MODE/${MTA_STS_MODE:-enforce}/" \
+        | sed "s/PRIMARY_HOSTNAME/$PUNY_PRIMARY_HOSTNAME/" \
+         > /var/lib/wspecsbox/mta-sts.txt
+chmod a+r /var/lib/wspecsbox/mta-sts.txt
+
 # make a default homepage
 if [ -d $STORAGE_ROOT/www/static ]; then mv $STORAGE_ROOT/www/static $STORAGE_ROOT/www/default; fi # migration #NODOC
 mkdir -p $STORAGE_ROOT/www/default
