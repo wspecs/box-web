@@ -43,7 +43,7 @@ if [ -f "~/.my.cnf" ]; then
 else
   echo "Setting up MYSQL login"
   NEW_PASSWORD=$(openssl rand -base64 36 | tr -d "=+/" | cut -c1-32)
-  mysql -e "SET PASSWORD FOR root@localhost = PASSWORD('$NEW_PASSWORD')"
+  mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '$NEW_PASSWORD';"
   mysql -e "DELETE FROM mysql.user WHERE User=''"
   mysql -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')"
   mysql -e "DROP DATABASE IF EXISTS test"
