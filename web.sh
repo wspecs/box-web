@@ -38,7 +38,7 @@ install_once php$PHP_VERSION-xml
 cp php.ini /etc/php/$PHP_VERSION/fpm/php.ini
 sudo systemctl restart php$PHP_VERSION-fpm
 
-if [ -f "~/.my.cnf" ]; then
+if [ -f "$HOME/.my.cnf" ]; then
   echo MySQL login is already configured
 else
   echo "Setting up MYSQL login"
@@ -51,12 +51,12 @@ else
   mysql -e "FLUSH PRIVILEGES"
 
   echo "Creating mysql config"
-  cat > ~/.my.cnf <<EOL
+  cat > $HOME/.my.cnf <<EOL
 [mysql]
 user=root
 password=$NEW_PASSWORD
 EOL
-  chmod 0600 ~/.my.cnf
+  chmod 0600 $HOME/.my.cnf
 fi
 
 rm -f /etc/nginx/sites-enabled/default
