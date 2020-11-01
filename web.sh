@@ -29,6 +29,7 @@ PHP_VERSION=7.4
 add_config PHP_VERSION=$PHP_VERSION /etc/wspecs/global.conf
 install_once php$PHP_VERSION-cli
 install_once php$PHP_VERSION-fpm
+install_once php$PHP_VERSION-idn2
 install_once php$PHP_VERSION-mysql
 install_once php$PHP_VERSION-curl
 install_once php$PHP_VERSION-gd
