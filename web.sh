@@ -7,8 +7,11 @@ source /etc/wspecs/functions.sh
 ufw_allow http
 ufw_allow https
 
-systemctl disable apache2
-systemctl stop apache2
+systemctl-exists() {
+  [ $(systemctl list-unit-files "${1}*" | wc -l) -gt 3 ]
+}
+
+systemctl-exists apache2 && systemctl disable apache2 && systemctl stop apache2
 
 # Some Ubuntu images start off with Apache. Remove it since we
 # will use nginx. Use autoremove to remove any Apache depenencies.
